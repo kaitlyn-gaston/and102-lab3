@@ -1,6 +1,7 @@
 package com.codepath.bestsellerlistapp
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,12 +10,25 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.codepath.asynchttpclient.AsyncHttpClient
+import com.codepath.asynchttpclient.RequestParams
+import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
 import com.codepath.bestsellerlistapp.R
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
+import okhttp3.Headers
+import org.json.JSONObject
+
+@SerializedName("book_image")
+var bookImageUrl: String? = null
+@SerializedName("description")
+var description: String? = null
 
 // --------------------------------//
 // CHANGE THIS TO BE YOUR API KEY  //
 // --------------------------------//
-private const val API_KEY = "<YOUR-API-KEY-HERE>"
+private const val API_KEY = "wdHm6tBY6udOahabwZLQ0r52lA0UeDTb"
 
 /*
  * The class for the only fragment in the app, which contains the progress bar,
@@ -49,24 +63,30 @@ class BestSellerBooksFragment : Fragment(), OnListFragmentInteractionListener {
 
         // Using the client, perform the HTTP request
 
-        /* Uncomment me once you complete the above sections!
-        {
-            /*
-             * The onSuccess function gets called when
-             * HTTP response status is "200 OK"
-             */
-            override fun onSuccess(
-                statusCode: Int,
-                headers: Headers,
-                json: JsonHttpResponseHandler.JSON
+        val client = AsyncHttpClient()
+        val params = RequestParams()
+        params["api-key"] = API_KEY
+
+        client[
+            "https://api.nytimes.com/svc/books/v3/lists/current/hardcover-fiction.json",
+            params,
+            object : JsonHttpResponseHandler() {
+                override fun onSuccess(
+                    statusCode: Int,
+                    headers: Headers,
+                    json: JsonHttpResponseHandler.JSON
             ) {
                 // The wait for a response is over
                 progressBar.hide()
 
                 //TODO - Parse JSON into Models
+                    val resultsJSON : JSONObject = json.jsonObject.get("results") as JSONObject
+                    val booksRawJSON : String = resultsJSON.get("books").toString()
 
-                val models : List<BestSellerBook> = null // Fix me!
-                recyclerView.adapter = BestSellerBooksRecyclerViewAdapter(models, this@BestSellerBooksFragment)
+                    val gson = Gson()
+                    val arrayBookType = object : TypeToken<List<BestSellerBook>>() {}.type
+                    val models : List<BestSellerBook> = gson.fromJson(booksRawJSON, arrayBookType)
+                    recyclerView.adapter = BestSellerBooksRecyclerViewAdapter(models, this@BestSellerBooksFragment)
 
                 // Look for this in Logcat:
                 Log.d("BestSellerBooksFragment", "response successful")
@@ -91,7 +111,6 @@ class BestSellerBooksFragment : Fragment(), OnListFragmentInteractionListener {
                 }
             }
         }]
-        */
 
     }
 
